@@ -127,21 +127,6 @@ export class StaircaseSession {
     return this.reversals;
   }
 
-  calculateResults(): ExamSummary {
-    return {
-      totalRounds: this.totalRounds,
-      correctCount: this.correctCount,
-      incorrectCount: this.incorrectCount,
-      finalLogMAR: this.currentLogMAR,
-      finalSnellen: logMARToSnellen(this.currentLogMAR),
-      finalDecimal: logMARToDecimal(this.currentLogMAR),
-      averageResponseTimeMs: 0,
-      voiceFallbackCount: 0,
-      recalibrationCount: 0,
-      driftEventsCount: 0,
-    };
-  }
-
   on(event: string, listener: SessionListener): void {
     if (!this.listeners.has(event)) this.listeners.set(event, new Set());
     this.listeners.get(event)!.add(listener);

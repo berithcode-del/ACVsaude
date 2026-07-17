@@ -1,8 +1,6 @@
 import { EventEmitter } from '@visao/shared';
 import type { TelemetryFrameData, RoundLog, ExamSummary, SessionLog } from '@visao/shared';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
-
 interface SessionLogEventMap {
   logUpdated: SessionLog;
   roundRecorded: RoundLog;
@@ -137,20 +135,6 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
         ...summary,
       },
     });
-
-    this.saveToServer().catch(() => {});
-  }
-
-  private async saveToServer(): Promise<void> {
-    try {
-      await fetch(`${API_URL}/api/sessions/${this.log.sessionId}/export/json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.log),
-      });
-    } catch {
-      // Fallback: já está em localStorage
-    }
   }
 
   private saveToLocalStorage(): void {
