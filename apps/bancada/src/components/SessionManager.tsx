@@ -4,6 +4,7 @@ import QRCode from 'react-qr-code';
 interface SessionManagerProps {
   serverUrl?: string;
   onSessionSelect: (sessionId: string) => void;
+  onSessionCreated: (sessionId: string) => void;
 }
 
 interface Session {
@@ -37,7 +38,7 @@ function getSessionUrl(serverUrl?: string, sessionId?: string): string {
   }
 }
 
-export function SessionManager({ serverUrl, onSessionSelect }: SessionManagerProps) {
+export function SessionManager({ serverUrl, onSessionSelect, onSessionCreated }: SessionManagerProps) {
   const apiBase = getApiBase(serverUrl);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,11 +52,12 @@ export function SessionManager({ serverUrl, onSessionSelect }: SessionManagerPro
       if (!res.ok) throw new Error('Falha ao criar sessão');
       const data = await res.json();
       loadSessions();
+      onSessionCreated(data.sessionId);
       return data.sessionId;
     } catch (err: any) {
       setError(err.message);
     }
-  }, [apiBase]);
+  }, [apiBase, loadSessions, onSessionCreated]);
 
   const loadSessions = useCallback(async () => {
     setLoading(true);
