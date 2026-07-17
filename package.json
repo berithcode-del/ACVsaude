@@ -1,0 +1,31 @@
+{
+  "name": "visao-acuidade-visual",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Exame de Acuidade Visual Assistido por IA - Sistema distribuido mobile + bancada",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "server"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:mobile": "npm run dev --workspace apps/mobile",
+    "dev:bancada": "npm run dev --workspace apps/bancada",
+    "dev:server": "npm run dev --workspace server",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "npm@10.8.1",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.35"
+  }
+}

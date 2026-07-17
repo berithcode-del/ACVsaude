@@ -1,0 +1,22 @@
+{
+  "name": "@visao/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types/*": "./src/types/*",
+    "./constants/*": "./src/constants/*",
+    "./design/*": "./src/design/*",
+    "./utils/*": "./src/utils/*"
+  },
+  "scripts": {
+    "dev": "echo ok",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,62 @@
+/** @type {import('tailwindcss').Config} */
+const examColors = {
+  primary: {
+    50: '#EFF6FF', 100: '#DBEAFE', 200: '#BFDBFE', 300: '#93C5FD',
+    400: '#60A5FA', 500: '#3B82F6', 600: '#2563EB', 700: '#1D4ED8',
+    800: '#1E40AF', 900: '#1E3A8A', DEFAULT: '#3B82F6',
+    foreground: '#FFFFFF', soft: 'rgba(59, 130, 246, 0.12)',
+  },
+  neutral: {
+    0: '#FFFFFF', 50: '#F8FAFC', 100: '#F1F5F9', 200: '#E2E8F0',
+    300: '#CBD5E1', 400: '#94A3B8', 500: '#64748B', 600: '#475569',
+    700: '#334155', 800: '#1E293B', 900: '#0F172A', 950: '#020617',
+  },
+  success: {
+    50: '#F0FDF4', 100: '#DCFCE7', 500: '#22C55E', 600: '#16A34A',
+    DEFAULT: '#22C55E', foreground: '#FFFFFF', soft: 'rgba(34, 197, 94, 0.12)',
+  },
+  warning: {
+    50: '#FFFBEB', 100: '#FEF3C7', 500: '#F59E0B', 600: '#D97706',
+    DEFAULT: '#F59E0B', foreground: '#1F2937', soft: 'rgba(245, 158, 11, 0.12)',
+  },
+  error: {
+    50: '#FEF2F2', 100: '#FEE2E2', 500: '#EF4444', 600: '#DC2626',
+    DEFAULT: '#EF4444', foreground: '#FFFFFF', soft: 'rgba(239, 68, 68, 0.12)',
+  },
+  optotype: {
+    background: '#FFFFFF', text: '#0F172A',
+    targetHighlight: '#3B82F6', border: '#E2E8F0',
+  },
+  overlay: {
+    calibration: 'rgba(59, 130, 246, 0.15)', calibrationBorder: '#3B82F6',
+    stable: 'rgba(34, 197, 94, 0.2)', unstable: 'rgba(239, 68, 68, 0.2)',
+    faceGuide: 'rgba(255, 255, 255, 0.3)',
+  },
+  dock: {
+    background: '#FFFFFF', border: '#E2E8F0', text: '#0F172A', textMuted: '#64748B',
+  },
+};
+
+export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: examColors.primary,
+        neutral: examColors.neutral,
+        success: examColors.success,
+        warning: examColors.warning,
+        error: examColors.error,
+        optotype: examColors.optotype,
+        overlay: examColors.overlay,
+        dock: examColors.dock,
+      },
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'Segoe UI', 'sans-serif'],
+        mono: ['JetBrains Mono', 'SF Mono', 'monospace'],
+        optotype: ['Sloan', 'ETDRS', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+};
