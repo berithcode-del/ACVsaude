@@ -1,10 +1,13 @@
+// ============================================================
+// SERVIDOR ACVsaude — COM PERSISTÊNCIA SQLITE + SAVE AUTOMÁTICO
+// ============================================================
+
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import { RoomManager } from './room-manager.js';
 import {
   getDatabase,
-  getDb,
-  saveDatabase,
+  saveDatabase,  // ✅ NOVO: importar saveDatabase
   createPatient,
   createSession,
   updateSessionCalibration,
@@ -25,6 +28,7 @@ import {
 const PORT = Number(process.env.PORT) || 3002;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
+// Inicializa banco de dados
 getDatabase();
 
 const httpServer = createServer(async (req, res) => {
@@ -63,7 +67,8 @@ const httpServer = createServer(async (req, res) => {
       const body = await readBody(req);
       const patient: PatientInput = JSON.parse(body);
       createPatient(patient);
-      saveDatabase(getDb()!);
+      // ✅ NOVO: Salvar banco após operação
+      saveDatabase(getDatabase());
       res.writeHead(201, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, patientId: patient.id }));
       return;
@@ -183,7 +188,7 @@ io.on('connection', (socket) => {
 
     if (data.patientInfo) {
       try { createPatient(data.patientInfo); } catch { /* paciente já existe */ }
-      saveDatabase(getDb()!);
+      saveDatabase(getDatabase());  // ✅ NOVO: salvar após criar paciente
     }
 
     if (data.role === 'mobile' && data.deviceInfo) {
@@ -194,7 +199,7 @@ io.on('connection', (socket) => {
           sessionCode: data.sessionId.slice(0, 8).toUpperCase(),
           deviceInfo: data.deviceInfo,
         });
-        saveDatabase(getDb()!);
+        saveDatabase(getDatabase());  // ✅ NOVO: salvar após criar sessão
       } catch { /* sessão já existe */ }
     }
 
@@ -218,7 +223,7 @@ io.on('connection', (socket) => {
     if (!currentSession) return;
     try {
       updateSessionCalibration(currentSession, data);
-      saveDatabase(getDb()!);
+      saveDatabase(getDatabase());  // ✅ NOVO: salvar após calibração
     } catch (err) {
       console.error('[db] Erro ao salvar calibração:', err);
     }
@@ -241,7 +246,7 @@ io.on('connection', (socket) => {
           isInRange: frame.isInRange,
         });
       });
-      saveDatabase(getDb()!);
+      saveDatabase(getDatabase());  // ✅ NOVO: salvar após telemetria
     } catch (err) {
       console.error('[db] Erro ao salvar telemetria:', err);
     }
@@ -283,7 +288,7 @@ io.on('connection', (socket) => {
           averageResponseTimeMs: data.event.averageResponseTimeMs || 0,
         });
       }
-      saveDatabase(getDb()!);
+      saveDatabase(getDatabase());  // ✅ NOVO: salvar após evento
     } catch (err) {
       console.error('[db] Erro ao salvar evento:', err);
     }
@@ -309,7 +314,7 @@ io.on('connection', (socket) => {
       if (role === 'mobile') {
         try {
           abortSession(currentSession);
-          saveDatabase(getDb()!);
+          saveDatabase(getDatabase());  // ✅ NOVO: salvar após abortar
         } catch (err) {
           console.error('[db] Erro ao abortar sessão:', err);
         }

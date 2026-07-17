@@ -1,4 +1,4 @@
-import type { ExamResult } from '@visao/shared';
+import type { ExamSummary } from '@visao/shared';
 import { SYSTEM_PARAMS, logMARToSnellen, logMARToDecimal, logMARToArcmin } from '@visao/shared';
 
 export interface RoundRecord {
@@ -23,6 +23,9 @@ export class StaircaseSession {
   private currentTargetIndex = 0;
   private currentLetters: string[] = [];
   private roundIndex = 0;
+  private totalRounds = 0;
+  private correctCount = 0;
+  private incorrectCount = 0;
   private readonly STEP: number = SYSTEM_PARAMS.STEP_LOGMAR;
   private readonly MAX_REVERSALS: number = SYSTEM_PARAMS.MAX_REVERSALS;
   private readonly CONSECUTIVE_CORRECT: number = SYSTEM_PARAMS.CONSECUTIVE_CORRECT;
@@ -76,6 +79,9 @@ export class StaircaseSession {
     }
 
     this.roundIndex++;
+    this.totalRounds++;
+    if (isCorrect) this.correctCount++;
+    else this.incorrectCount++;
 
     return {
       logMAR: this.currentLogMAR,
@@ -121,12 +127,18 @@ export class StaircaseSession {
     return this.reversals;
   }
 
-  calculateResults(): ExamResult {
+  calculateResults(): ExamSummary {
     return {
-      logMAR: this.currentLogMAR,
-      snellen: logMARToSnellen(this.currentLogMAR),
-      decimal: logMARToDecimal(this.currentLogMAR),
-      reversals: this.reversals,
+      totalRounds: this.totalRounds,
+      correctCount: this.correctCount,
+      incorrectCount: this.incorrectCount,
+      finalLogMAR: this.currentLogMAR,
+      finalSnellen: logMARToSnellen(this.currentLogMAR),
+      finalDecimal: logMARToDecimal(this.currentLogMAR),
+      averageResponseTimeMs: 0,
+      voiceFallbackCount: 0,
+      recalibrationCount: 0,
+      driftEventsCount: 0,
     };
   }
 
@@ -143,12 +155,18 @@ export class StaircaseSession {
     this.listeners.get(event)?.forEach((cb) => cb(detail));
   }
 
-  getSummary(): ExamResult {
+  getSummary(): ExamSummary {
     return {
-      logMAR: this.currentLogMAR,
-      snellen: logMARToSnellen(this.currentLogMAR),
-      decimal: logMARToDecimal(this.currentLogMAR),
-      reversals: this.reversals,
+      totalRounds: this.totalRounds,
+      correctCount: this.correctCount,
+      incorrectCount: this.incorrectCount,
+      finalLogMAR: this.currentLogMAR,
+      finalSnellen: logMARToSnellen(this.currentLogMAR),
+      finalDecimal: logMARToDecimal(this.currentLogMAR),
+      averageResponseTimeMs: 0,
+      voiceFallbackCount: 0,
+      recalibrationCount: 0,
+      driftEventsCount: 0,
     };
   }
 
@@ -161,5 +179,8 @@ export class StaircaseSession {
     this.currentTargetIndex = 0;
     this.currentLetters = [];
     this.roundIndex = 0;
+    this.totalRounds = 0;
+    this.correctCount = 0;
+    this.incorrectCount = 0;
   }
 }

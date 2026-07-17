@@ -101,6 +101,7 @@ export function useWebSocket() {
     socketRef.current?.emit('calibration_data', data);
   }, []);
 
+  // ✅ CORREÇÃO: Adicionar sendVideoFrame ao return
   const sendVideoFrame = useCallback((dataUrl: string) => {
     socketRef.current?.emit('video_frame', { dataUrl });
   }, []);
@@ -112,7 +113,7 @@ export function useWebSocket() {
     sendExamEvent,
     sendControl,
     sendCalibrationData,
-    sendVideoFrame,
+    sendVideoFrame,  // ✅ ADICIONADO
     status,
   };
 }

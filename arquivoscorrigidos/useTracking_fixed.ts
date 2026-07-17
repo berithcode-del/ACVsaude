@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useMobileStore } from '../store';
 import { FaceDetector } from '../engine/FaceDetector';
 import { HybridTrackingEngine } from '../engine/HybridTrackingEngine';
-import { useWebSocket } from './useWebSocket';
+import { useWebSocket } from './useWebSocket';  // ✅ NOVO: importar WebSocket
 import type { CalibrationState } from '../engine/CalibrationEngine';
 import type { SessionLogger } from '../engine/SessionLogger';
 
@@ -19,6 +19,7 @@ export function useTracking(
   const setTrackingMetrics = useMobileStore((s) => s.setTrackingMetrics);
   const setError = useMobileStore((s) => s.setError);
 
+  // ✅ NOVO: Obter função do WebSocket para enviar telemetria
   const { sendTelemetry } = useWebSocket();
 
   useEffect(() => {
@@ -64,18 +65,21 @@ export function useTracking(
     setTrackingMetrics(result.stability, result.distance_mm, result.isInRange);
 
     frameCountRef.current++;
+    // ✅ CORREÇÃO: Enviar telemetria via WebSocket (batch de 3 frames)
     if (frameCountRef.current % 3 === 0) {
+      // Enviar para servidor
       sendTelemetry([{
         faceDetected: true,
         faceWidthPx: result.faceWidth_px,
         faceHeightPx: result.faceHeight_px,
         ipdEstimatedPx: result.ipd_estimated_px,
         scaleCurrent: result.scale_current,
-        distanceMm: result.distance_mm,
+        distanceMm: result.distance_mm,  // ✅ CORREÇÃO: usa distance_mm real!
         stability: result.stability,
         isInRange: result.isInRange,
       }]);
 
+      // Também loggar localmente se logger disponível
       if (logger) {
         logger.logTelemetry({
           faceDetected: true,
@@ -83,7 +87,7 @@ export function useTracking(
           faceHeightPx: result.faceHeight_px,
           ipdEstimatedPx: result.ipd_estimated_px,
           scaleCurrent: result.scale_current,
-          distanceMm: result.distance_mm,
+          distanceMm: result.distance_mm,  // ✅ CORREÇÃO: usa distance_mm real!
           stability: result.stability,
           isInRange: result.isInRange,
         });

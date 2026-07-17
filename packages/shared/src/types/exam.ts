@@ -11,16 +11,14 @@ export interface RoundLog {
   targetLetter: string;
   displayLetters: string[];
   targetIndex: number;
-  response: {
-    correct: boolean;
-    source: ResponseSource;
-    responseTimeMs: number;
-    recognizedText?: string;
-    confidence?: number;
-  };
-  distanceAtPresentation: number;
-  scaleAtPresentation: number;
-  stabilityAtPresentation: number;
+  correct: boolean;
+  responseSource: ResponseSource;
+  responseTimeMs: number;
+  recognizedText?: string;
+  confidence?: number;
+  distanceAtPresentation: number | null;
+  scaleAtPresentation: number | null;
+  stabilityAtPresentation: number | null;
 }
 
 export interface DeviceInfo {
@@ -38,6 +36,19 @@ export interface ExamResult {
   snellen: string;
   decimal: number;
   reversals: number;
+}
+
+export interface ExamSummary {
+  totalRounds: number;
+  correctCount: number;
+  incorrectCount: number;
+  finalLogMAR: number;
+  finalSnellen: string;
+  finalDecimal: number;
+  averageResponseTimeMs: number;
+  voiceFallbackCount: number;
+  recalibrationCount: number;
+  driftEventsCount: number;
 }
 
 export interface SessionSummary {

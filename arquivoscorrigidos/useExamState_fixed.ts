@@ -1,16 +1,18 @@
 import { useRef, useCallback } from 'react';
 import { useMobileStore } from '../store';
 import { StaircaseSession } from '../engine/StaircaseSession';
-import { useWebSocket } from './useWebSocket';
-import type { RoundLog, ExamSummary, ExamResult } from '@visao/shared';
+import { useWebSocket } from './useWebSocket';  // ✅ NOVO: importar WebSocket
+import type { RoundLog, ExamSummary } from '@visao/shared';
 
 export function useExamState() {
   const sessionRef = useRef<StaircaseSession | null>(null);
   const roundIndexRef = useRef(0);
   const setPhase = useMobileStore((s) => s.setPhase);
   const setExamResult = useMobileStore((s) => s.setExamResult);
+  const setError = useMobileStore((s) => s.setError);
   const setExamMetrics = useMobileStore((s) => s.setExamMetrics);
 
+  // ✅ NOVO: Obter funções do WebSocket para enviar dados ao servidor
   const { sendExamEvent } = useWebSocket();
 
   const startExam = useCallback(() => {
@@ -57,6 +59,7 @@ export function useExamState() {
       stabilityAtPresentation: extra?.stability ?? null,
     };
 
+    // ✅ CORREÇÃO: Enviar round para servidor via WebSocket
     sendExamEvent({
       kind: 'round_answered',
       ...roundLog,
@@ -66,15 +69,10 @@ export function useExamState() {
 
     if (round.finished) {
       const summary = session.getSummary();
-      const result: ExamResult = {
-        logMAR: summary.finalLogMAR,
-        snellen: summary.finalSnellen,
-        decimal: summary.finalDecimal,
-        reversals: 0,
-      };
-      setExamResult(result);
+      setExamResult(summary);
       setPhase('exam_finished');
 
+      // ✅ CORREÇÃO: Enviar resultado final para servidor
       sendExamEvent({
         kind: 'test_finished',
         ...summary,

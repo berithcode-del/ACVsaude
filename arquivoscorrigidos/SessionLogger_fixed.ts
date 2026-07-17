@@ -59,6 +59,7 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     };
   }
 
+  // ✅ NOVO: Conectar com WebSocket para enviar dados ao servidor
   setSocket(socket: any): void {
     this.socket = socket;
   }
@@ -68,6 +69,7 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     this.emit('calibrationRecorded', calibration);
     this.saveToLocalStorage();
 
+    // ✅ Enviar calibração para servidor via WebSocket
     this.socket?.emit?.('calibration_data', {
       ipdRefPx: calibration.ipdRefPx,
       faceWidthRefPx: calibration.faceWidthRefPx,
@@ -83,6 +85,7 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     this.emit('logUpdated', this.log);
     this.saveToLocalStorage();
 
+    // ✅ Enviar round para servidor via WebSocket
     this.socket?.emit?.('exam_event', {
       event: {
         kind: 'round_answered',
@@ -108,6 +111,7 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     this.emit('telemetryRecorded', frames);
     this.emit('logUpdated', this.log);
 
+    // ✅ Enviar telemetria para servidor via WebSocket
     this.socket?.emit?.('telemetry', { frames });
 
     this.saveToLocalStorage();
@@ -120,6 +124,7 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     this.emit('logUpdated', this.log);
     this.saveToLocalStorage();
 
+    // ✅ Enviar evento para servidor via WebSocket
     this.socket?.emit?.('exam_event', { event: eventEntry });
   }
 
@@ -131,6 +136,7 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     this.emit('logUpdated', this.log);
     this.saveToLocalStorage();
 
+    // ✅ Enviar resultado final para servidor via WebSocket
     this.socket?.emit?.('exam_event', {
       event: {
         kind: 'test_finished',
@@ -138,9 +144,11 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
       },
     });
 
+    // ✅ NOVO: Também salvar no servidor via POST (backup)
     this.saveToServer().catch(() => {});
   }
 
+  // ✅ NOVO: Salvar no servidor via POST (backup)
   private async saveToServer(): Promise<void> {
     try {
       await fetch(`${API_URL}/api/sessions/${this.log.sessionId}/export/json`, {
@@ -153,6 +161,7 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     }
   }
 
+  // ✅ NOVO: Backup offline em localStorage
   private saveToLocalStorage(): void {
     try {
       const key = 'visao_session_' + this.log.sessionId;
@@ -160,6 +169,7 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     } catch { }
   }
 
+  // ✅ NOVO: Recuperar log de localStorage (útil para retry)
   static loadFromLocalStorage(sessionId: string): SessionLog | null {
     try {
       const key = 'visao_session_' + sessionId;
@@ -170,22 +180,27 @@ export class SessionLogger extends EventEmitter<SessionLogEventMap> {
     }
   }
 
+  // ✅ NOVO: Obter log completo
   getLog(): SessionLog {
     return this.log;
   }
 
+  // ✅ NOVO: Obter resumo do exame
   getSummary(): ExamSummary {
     return this.log.summary;
   }
 
+  // ✅ NOVO: Obter calibração
   getCalibration(): SessionLog['calibration'] {
     return this.log.calibration;
   }
 
+  // ✅ NOVO: Obter rounds
   getRounds(): RoundLog[] {
     return this.log.rounds;
   }
 
+  // ✅ NOVO: Obter telemetria
   getTelemetry(): TelemetryFrameData[] {
     return this.log.telemetry;
   }

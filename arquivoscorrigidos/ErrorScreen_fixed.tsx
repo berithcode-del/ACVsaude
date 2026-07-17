@@ -8,6 +8,7 @@ interface ErrorScreenProps {
   onRetry?: () => void;
 }
 
+// ✅ CORREÇÃO: Mensagens específicas para TODOS os tipos de erro de câmera
 const CAMERA_ERROR_MESSAGES: Record<string, { title: string; message: string; action: string }> = {
   'not-allowed': {
     title: 'Permissão de câmera negada',
@@ -102,6 +103,7 @@ export function ErrorScreen({ type = 'generic', title, message, onRetry }: Error
   const setPhase = useMobileStore((s) => s.setPhase);
   const reset = useMobileStore((s) => s.reset);
 
+  // ✅ CORREÇÃO: Se é um erro de câmera específico, usa mensagem detalhada
   const cameraError = type && CAMERA_ERROR_MESSAGES[type]
     ? CAMERA_ERROR_MESSAGES[type]
     : null;

@@ -1,19 +1,20 @@
-import type { RoundLog, TelemetryFrameData, SessionSummary, DeviceInfo } from '@visao/shared';
+import type { RoundLog, TelemetryFrameData, ExamSummary, DeviceInfo } from '@visao/shared';
 
 interface ExportSessionLog {
   sessionId: string;
   deviceInfo: DeviceInfo;
   calibration: {
-    ipd_ref_px: number;
-    faceWidth_ref_px: number;
-    faceHeight_ref_px: number;
-    biometric_ratio: number;
-    scale_comfort: number;
+    ipdRefPx: number;
+    faceWidthRefPx: number;
+    faceHeightRefPx: number;
+    biometricRatio: number;
+    scaleComfort: number;
     timestamp: number;
   };
   rounds: RoundLog[];
   telemetry: TelemetryFrameData[];
-  summary: SessionSummary;
+  summary: ExamSummary;
+  timestamps: { start: number; end: number };
 }
 
 export class LogExporter {
@@ -30,26 +31,28 @@ export class LogExporter {
         devicePixelRatio: window.devicePixelRatio,
       },
       calibration: {
-        ipd_ref_px: 0,
-        faceWidth_ref_px: 0,
-        faceHeight_ref_px: 0,
-        biometric_ratio: 0,
-        scale_comfort: 0,
+        ipdRefPx: 0,
+        faceWidthRefPx: 0,
+        faceHeightRefPx: 0,
+        biometricRatio: 0,
+        scaleComfort: 0,
         timestamp: Date.now(),
       },
       rounds: [],
       telemetry: [],
       summary: {
-        startTime: Date.now(),
-        endTime: 0,
-        totalDurationMs: 0,
+        totalRounds: 0,
+        correctCount: 0,
+        incorrectCount: 0,
         finalLogMAR: 0,
         finalSnellen: '',
+        finalDecimal: 0,
         averageResponseTimeMs: 0,
         voiceFallbackCount: 0,
         recalibrationCount: 0,
-        driftEvents: 0,
+        driftEventsCount: 0,
       },
+      timestamps: { start: Date.now(), end: 0 },
     };
   }
 
@@ -62,10 +65,12 @@ export class LogExporter {
   }
 
   finalize(finalLogMAR: number, finalSnellen: string): void {
-    this.log.summary.endTime = Date.now();
-    this.log.summary.totalDurationMs = this.log.summary.endTime - this.log.summary.startTime;
+    this.log.timestamps.end = Date.now();
     this.log.summary.finalLogMAR = finalLogMAR;
     this.log.summary.finalSnellen = finalSnellen;
+    this.log.summary.totalRounds = this.log.rounds.length;
+    this.log.summary.correctCount = this.log.rounds.filter(r => r.correct).length;
+    this.log.summary.incorrectCount = this.log.rounds.filter(r => !r.correct).length;
   }
 
   toJSON(): string {
@@ -83,9 +88,9 @@ export class LogExporter {
         r.angleArcmin,
         r.targetLetter,
         r.displayLetters.join(' '),
-        r.response.correct ? '1' : '0',
-        r.response.source,
-        r.response.responseTimeMs,
+        r.correct ? '1' : '0',
+        r.responseSource,
+        r.responseTimeMs,
         r.distanceAtPresentation,
         r.scaleAtPresentation,
         r.stabilityAtPresentation,
@@ -113,9 +118,10 @@ export class LogExporter {
     rows.push('--- SUMMARY ---');
     rows.push(`finalLogMAR,${this.log.summary.finalLogMAR}`);
     rows.push(`finalSnellen,${this.log.summary.finalSnellen}`);
-    rows.push(`totalDurationMs,${this.log.summary.totalDurationMs}`);
+    rows.push(`totalRounds,${this.log.summary.totalRounds}`);
+    rows.push(`correctCount,${this.log.summary.correctCount}`);
     rows.push(`averageResponseTimeMs,${this.log.summary.averageResponseTimeMs}`);
-    rows.push(`driftEvents,${this.log.summary.driftEvents}`);
+    rows.push(`driftEventsCount,${this.log.summary.driftEventsCount}`);
 
     return rows.join('\n');
   }

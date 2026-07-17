@@ -3,20 +3,25 @@
 // ============================================================
 
 import type { TelemetryFrameData } from './websocket';
-import type { DeviceInfo, RoundLog, SessionSummary } from './exam';
+import type { DeviceInfo, RoundLog, ExamSummary } from './exam';
 
 export interface SessionLog {
   sessionId: string;
   deviceInfo: DeviceInfo;
   calibration: {
-    ipd_ref_px: number;
-    faceWidth_ref_px: number;
-    faceHeight_ref_px: number;
-    biometric_ratio: number;
-    scale_comfort: number;
+    ipdRefPx: number;
+    faceWidthRefPx: number;
+    faceHeightRefPx: number;
+    biometricRatio: number;
+    scaleComfort: number;
     timestamp: number;
   };
   rounds: RoundLog[];
   telemetry: TelemetryFrameData[];
-  summary: SessionSummary;
+  events: { kind: string; data?: any; timestamp: number }[];
+  summary: ExamSummary;
+  timestamps: {
+    start: number;
+    end: number;
+  };
 }

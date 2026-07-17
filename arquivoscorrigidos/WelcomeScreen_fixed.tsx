@@ -6,33 +6,36 @@ interface WelcomeScreenProps {
   onServerUrlChange: (url: string) => void;
 }
 
+// ✅ CORREÇÃO: Interface completa com patientId e birthDate
 export interface PatientInfo {
-  patientId: string;
+  patientId: string;       // ✅ NOVO: ID único do paciente (prontuário)
   name: string;
-  birthDate: string;
-  gender: 'M' | 'F' | 'O';
-  eye: 'OD' | 'OE';
+  birthDate: string;       // ✅ CORREÇÃO: data de nascimento em vez de age
+  gender: 'M' | 'F' | 'O'; // ✅ NOVO: gênero
+  eye: 'OD' | 'OE';        // ✅ NOVO: olho sendo examinado
   notes: string;
 }
 
 export function WelcomeScreen({ onStart, serverUrl, onServerUrlChange }: WelcomeScreenProps) {
   const [name, setName] = useState('');
-  const [patientId, setPatientId] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [gender, setGender] = useState<'M' | 'F' | 'O'>('M');
-  const [eye, setEye] = useState<'OD' | 'OE'>('OD');
+  const [patientId, setPatientId] = useState('');       // ✅ NOVO
+  const [birthDate, setBirthDate] = useState('');       // ✅ CORREÇÃO
+  const [gender, setGender] = useState<'M' | 'F' | 'O'>('M');  // ✅ NOVO
+  const [eye, setEye] = useState<'OD' | 'OE'>('OD');     // ✅ NOVO
   const [notes, setNotes] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [sessionId, setSessionId] = useState('');
 
+  // ✅ CORREÇÃO: Criar paciente no servidor ANTES de criar sessão
   const handleCreate = async () => {
     setError('');
     if (!name.trim()) { setError('Nome do paciente é obrigatório'); return; }
-    if (!patientId.trim()) { setError('ID do paciente (prontuário) é obrigatório'); return; }
+    if (!patientId.trim()) { setError('ID do paciente (prontuário) é obrigatório'); return; }  // ✅ NOVO
 
     setCreating(true);
     try {
+      // ✅ CORREÇÃO: Criar/atualizar paciente no servidor primeiro
       const patientRes = await fetch(`${serverUrl}/api/patients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,10 +46,12 @@ export function WelcomeScreen({ onStart, serverUrl, onServerUrlChange }: Welcome
           gender: gender || undefined,
         }),
       });
+      // Ignora erro 409 (paciente já existe) ou outros — continua
       if (!patientRes.ok && patientRes.status !== 409) {
         console.warn('[WelcomeScreen] Aviso ao criar paciente:', patientRes.status);
       }
 
+      // Criar sessão
       const res = await fetch(`${serverUrl}/api/session`, { method: 'POST' });
       if (!res.ok) throw new Error('Falha ao criar sessão');
       const data = await res.json();
@@ -95,6 +100,7 @@ export function WelcomeScreen({ onStart, serverUrl, onServerUrlChange }: Welcome
                 />
               </div>
 
+              {/* ✅ NOVO: ID do paciente */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="patientId">ID do Paciente (Prontuário) *</label>
                 <input
@@ -123,6 +129,7 @@ export function WelcomeScreen({ onStart, serverUrl, onServerUrlChange }: Welcome
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+                {/* ✅ CORREÇÃO: Data de nascimento em vez de idade */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="birthDate">Data de Nascimento</label>
                   <input
@@ -133,6 +140,7 @@ export function WelcomeScreen({ onStart, serverUrl, onServerUrlChange }: Welcome
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                   />
                 </div>
+                {/* ✅ NOVO: Gênero */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="gender">Gênero</label>
                   <select
@@ -148,6 +156,7 @@ export function WelcomeScreen({ onStart, serverUrl, onServerUrlChange }: Welcome
                 </div>
               </div>
 
+              {/* ✅ NOVO: Seleção de olho */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Olho a ser examinado</label>
                 <div className="grid grid-cols-2 gap-3">

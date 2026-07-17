@@ -22,6 +22,10 @@ export async function getDatabase(): Promise<SqlJsDatabase> {
   return db;
 }
 
+export function getDb(): SqlJsDatabase | null {
+  return db;
+}
+
 function initializeSchema(db: SqlJsDatabase): void {
   db.run(`
     CREATE TABLE IF NOT EXISTS patients (
@@ -124,7 +128,7 @@ function initializeSchema(db: SqlJsDatabase): void {
   console.log('[db] Schema inicializado');
 }
 
-function saveDatabase(db: SqlJsDatabase): void {
+export function saveDatabase(db: SqlJsDatabase): void {
   const dir = path.dirname(DB_PATH);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const data = db.export();
