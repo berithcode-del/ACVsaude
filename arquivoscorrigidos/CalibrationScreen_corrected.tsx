@@ -9,12 +9,13 @@ export function CalibrationScreen() {
   const phase = useMobileStore((s) => s.phase);
   const setPhase = useMobileStore((s) => s.setPhase);
   const setError = useMobileStore((s) => s.setError);
-  const setCalibrationState = useMobileStore((s) => s.setCalibrationState);
+  const setCalibrationState = useMobileStore((s) => s.setCalibrationState);  // ✅ NOVO
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
 
   const { captureReference, captureComfortPosition, engine } = useCalibration();
+  // ✅ Passa null como calibração (ainda não calibrado)
   const { startCamera, getDetector } = useTracking(null);
 
   const handleVideoReady = useCallback((video: HTMLVideoElement) => {
@@ -22,13 +23,19 @@ export function CalibrationScreen() {
     startCamera(video).then(setCameraReady);
   }, [startCamera]);
 
+  // ✅ Cleanup: NÃO para o detector (é singleton compartilhado)
+  // Só limpa o vídeo element local
   useEffect(() => {
     return () => {
       const v = videoRef.current;
-      if (v) { v.pause(); v.srcObject = null; }
+      if (v) {
+        v.pause();
+        v.srcObject = null;
+      }
     };
   }, []);
 
+  // Loop de captura de calibração
   useEffect(() => {
     if (!cameraReady) return;
     let running = true;
@@ -39,8 +46,13 @@ export function CalibrationScreen() {
       if (!detector) return;
 
       const faceMesh = detector.getFaceDetectionResult();
-      if (phase === 'calibration_step1') captureReference(faceMesh);
-      if (phase === 'calibration_step2') captureComfortPosition(faceMesh);
+      if (phase === 'calibration_step1') {
+        captureReference(faceMesh);
+      }
+
+      if (phase === 'calibration_step2') {
+        captureComfortPosition(faceMesh);
+      }
     }, 100);
 
     return () => { running = false; clearInterval(interval); };
@@ -58,16 +70,21 @@ export function CalibrationScreen() {
     setError(null);
 
     if (isStep1) {
+      // ✅ Verifica se calibração de referência foi capturada
       const state = engine?.getState();
       if (!state?.isCalibrated) {
         setError('Aguarde a calibração de referência ser concluída.', 'generic');
         return;
       }
+      // ✅ Salva no store para o exame usar
       setCalibrationState(state);
       setPhase('calibration_step2');
     } else {
+      // ✅ Atualiza calibração completa no store
       const finalState = engine?.getState();
-      if (finalState) setCalibrationState(finalState);
+      if (finalState) {
+        setCalibrationState(finalState);
+      }
       setPhase('calibration_complete');
     }
   };

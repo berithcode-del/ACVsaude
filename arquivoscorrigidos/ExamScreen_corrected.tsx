@@ -19,12 +19,14 @@ export function ExamScreen() {
   const [tracking, setTracking] = useState<TrackingResult | null>(null);
 
   const setPhase = useMobileStore((s) => s.setPhase);
+  // ✅ PEGA CALIBRAÇÃO REAL DO STORE (não mock!)
   const calibrationState = useMobileStore((s) => s.calibrationState);
 
   const { getRoundLetters, recordResponse, startExam } = useExamState();
   const { connect, getLogger } = useWebSocket();
   const logger = getLogger();
 
+  // ✅ Passa calibração REAL do store
   const { startCamera, getTrackingResult, getDetector, stopDetector } = useTracking(
     calibrationState,
     logger
@@ -47,10 +49,12 @@ export function ExamScreen() {
   }, [getRoundLetters]);
 
   useEffect(() => {
+    // ✅ Verifica se tem calibração antes de iniciar
     if (!calibrationState?.isCalibrated) {
       setPhase('calibration_step1');
       return;
     }
+
     startExam();
     generateNextRound();
     connect();
@@ -71,7 +75,9 @@ export function ExamScreen() {
   }, [cameraReady, getTrackingResult]);
 
   useEffect(() => {
-    if (cameraReady) startStream();
+    if (cameraReady) {
+      startStream();
+    }
   }, [cameraReady, startStream]);
 
   useEffect(() => {
@@ -80,6 +86,7 @@ export function ExamScreen() {
       const correct = letter === target;
       const result = recordResponse(correct);
       if (result) {
+        // ✅ Para detector no fim da sessão (libera câmera)
         stopDetector();
         setPhase('exam_finished');
         return;
@@ -112,6 +119,7 @@ export function ExamScreen() {
     startListening();
   }, [startListening]);
 
+  // ✅ Se não tem calibração, mostra mensagem de erro
   if (!calibrationState?.isCalibrated) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">

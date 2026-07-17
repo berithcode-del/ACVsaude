@@ -8,11 +8,12 @@ interface ErrorScreenProps {
   onRetry?: () => void;
 }
 
+// ✅ Mensagens específicas para cada tipo de erro de câmera
 const CAMERA_ERROR_MESSAGES: Record<string, { title: string; message: string; action: string }> = {
   'not-allowed': {
     title: 'Permissão de câmera negada',
     message: 'O acesso à câmera foi bloqueado. Você precisa permitir manualmente.',
-    action: 'Toque no ícone de cadeado na barra de endereço do navegador, encontre "Câmera" e mude para "Permitir". Depois recarregue a página.',
+    action: 'Toque no ícone de cadeado 🔒 na barra de endereço do navegador, encontre "Câmera" e mude para "Permitir". Depois recarregue a página.',
   },
   'not-found': {
     title: 'Câmera não encontrada',
@@ -21,7 +22,7 @@ const CAMERA_ERROR_MESSAGES: Record<string, { title: string; message: string; ac
   },
   'not-readable': {
     title: 'Câmera em uso',
-    message: 'Outro aplicativo está usando a câmera.',
+    message: 'Outro aplicativo está usando a câmera (Zoom, Instagram, etc.).',
     action: 'Feche todos os outros aplicativos que possam estar usando a câmera e tente novamente.',
   },
   'overconstrained': {
@@ -32,7 +33,7 @@ const CAMERA_ERROR_MESSAGES: Record<string, { title: string; message: string; ac
   'security': {
     title: 'Conexão não segura',
     message: 'O acesso à câmera requer uma conexão segura (HTTPS).',
-    action: 'Acesse o aplicativo via HTTPS ou localhost.',
+    action: 'Acesse o aplicativo via HTTPS ou localhost (http://localhost:3000).',
   },
   'model-timeout': {
     title: 'Modelo não carregou',
@@ -102,7 +103,11 @@ export function ErrorScreen({ type = 'generic', title, message, onRetry }: Error
   const setPhase = useMobileStore((s) => s.setPhase);
   const reset = useMobileStore((s) => s.reset);
 
-  const cameraError = type && CAMERA_ERROR_MESSAGES[type] ? CAMERA_ERROR_MESSAGES[type] : null;
+  // ✅ Se é um erro de câmera específico, usa mensagem detalhada
+  const cameraError = type && CAMERA_ERROR_MESSAGES[type]
+    ? CAMERA_ERROR_MESSAGES[type]
+    : null;
+
   const config = ERROR_CONFIG[type as keyof typeof ERROR_CONFIG] || ERROR_CONFIG.generic;
 
   const displayTitle = cameraError?.title || title || config.title;
@@ -122,7 +127,9 @@ export function ErrorScreen({ type = 'generic', title, message, onRetry }: Error
         {config.icon}
       </div>
       <h1 className="text-xl font-bold text-neutral-900">{displayTitle}</h1>
-      <p className="max-w-sm text-sm leading-relaxed text-neutral-600">{displayMessage}</p>
+      <p className="max-w-sm text-sm leading-relaxed text-neutral-600">
+        {displayMessage}
+      </p>
       {displayAction && (
         <div className="max-w-sm rounded-xl bg-primary-50 p-4 text-left text-sm text-primary-700">
           <strong>O que fazer:</strong>

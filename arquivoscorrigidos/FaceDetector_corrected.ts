@@ -44,12 +44,16 @@ export class FaceDetector {
     this.ctx = this.canvas.getContext('2d')!;
   }
 
+  /**
+   * Inicializa câmera + MediaPipe com tratamento de erro específico e timeout
+   */
   async initialize(videoElement: HTMLVideoElement): Promise<boolean> {
     if (this.state !== 'idle') this.stop();
     this.video = videoElement;
     this.state = 'loading';
     this.emit('loading');
 
+    // --- PASSO 1: Acessar câmera com tratamento de erro específico ---
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -67,6 +71,7 @@ export class FaceDetector {
 
     this.video.srcObject = this.stream;
 
+    // ✅ Aguardar metadados do vídeo antes de play()
     await new Promise<void>((resolve, reject) => {
       if (!this.video) return reject();
       this.video.onloadedmetadata = () => resolve();
@@ -74,21 +79,25 @@ export class FaceDetector {
       this.video.play().catch(reject);
     });
 
+    // --- PASSO 2: Carregar MediaPipe com timeout ---
     this.state = 'model-loading';
     this.emit('model-loading');
 
     try {
       const vision = await this.loadMediaPipeWithTimeout();
 
+      // Tentar GPU primeiro, fallback para CPU
       let delegate: 'GPU' | 'CPU' = 'GPU';
       try {
         this.faceLandmarker = await this.createLandmarker(vision, delegate);
       } catch {
+        // Fallback para CPU
         delegate = 'CPU';
         this.emit('fallback-gpu', { message: 'GPU não disponível, usando CPU' });
         this.faceLandmarker = await this.createLandmarker(vision, delegate);
       }
-    } catch {
+
+    } catch (err: any) {
       const errorDetail: CameraErrorDetail = {
         type: 'model-failed',
         message: 'Falha ao carregar modelo de detecção facial. Verifique sua conexão.',
@@ -106,6 +115,9 @@ export class FaceDetector {
     return true;
   }
 
+  /**
+   * Carrega MediaPipe com timeout configurável
+   */
   private async loadMediaPipeWithTimeout(): Promise<any> {
     return new Promise((resolve, reject) => {
       this.modelLoadTimeout = setTimeout(() => {
@@ -124,6 +136,9 @@ export class FaceDetector {
     });
   }
 
+  /**
+   * Cria FaceLandmarker com delegate específico
+   */
   private async createLandmarker(vision: any, delegate: 'GPU' | 'CPU'): Promise<FaceLandmarker> {
     return FaceLandmarker.createFromOptions(vision, {
       baseOptions: {
@@ -139,6 +154,9 @@ export class FaceDetector {
     });
   }
 
+  /**
+   * Converte erros getUserMedia em mensagens específicas para o usuário
+   */
   private parseGetUserMediaError(err: any): CameraErrorDetail {
     const name = err?.name || '';
     switch (name) {
@@ -147,7 +165,7 @@ export class FaceDetector {
         return {
           type: 'not-allowed',
           message: 'Permissão de câmera negada',
-          userAction: 'Toque no ícone de cadeado na barra de endereço e permita o acesso à câmera.',
+          userAction: 'Toque no ícone de cadeado 🔒 na barra de endereço e permita o acesso à câmera.',
         };
       case 'NotFoundError':
       case 'DevicesNotFoundError':
@@ -161,7 +179,7 @@ export class FaceDetector {
         return {
           type: 'not-readable',
           message: 'Câmera em uso por outro aplicativo',
-          userAction: 'Feche outros apps que possam estar usando a câmera e tente novamente.',
+          userAction: 'Feche outros apps que possam estar usando a câmera (Zoom, Instagram, etc.) e tente novamente.',
         };
       case 'OverconstrainedError':
         return {
@@ -173,7 +191,7 @@ export class FaceDetector {
         return {
           type: 'security',
           message: 'Contexto não seguro',
-          userAction: 'Acesse o aplicativo via HTTPS ou localhost.',
+          userAction: 'Acesse o aplicativo via HTTPS ou localhost (http://localhost:3000).',
         };
       default:
         return {
@@ -188,6 +206,7 @@ export class FaceDetector {
     const loop = () => {
       if (this.state !== 'ready' || !this.video || !this.faceLandmarker) return;
 
+      // ✅ Verificar readyState antes de drawImage
       if (this.video.readyState < 2) {
         this.animationId = requestAnimationFrame(loop);
         return;
@@ -250,6 +269,9 @@ export class FaceDetector {
     return (this.lastResult?.multiFaceLandmarks?.length ?? 0) > 0;
   }
 
+  /**
+   * Para completamente e libera todos os recursos
+   */
   stop(): void {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);

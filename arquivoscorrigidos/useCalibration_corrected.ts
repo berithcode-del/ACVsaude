@@ -7,7 +7,7 @@ export function useCalibration() {
   const engineRef = useRef<CalibrationEngine | null>(null);
   const setCalibrationProgress = useMobileStore((s) => s.setCalibrationProgress);
   const setCalibrationPhase = useMobileStore((s) => s.setCalibrationPhase);
-  const setCalibrationState = useMobileStore((s) => s.setCalibrationState);
+  const setCalibrationState = useMobileStore((s) => s.setCalibrationState);  // ✅ NOVO
   const setPhase = useMobileStore((s) => s.setPhase);
   const setError = useMobileStore((s) => s.setError);
 
@@ -22,14 +22,18 @@ export function useCalibration() {
     engine.on('referenceCaptured', (state) => {
       setCalibrationPhase('step2_comfort');
       setCalibrationProgress(0);
+      // ✅ Salva estado parcial no store
       setCalibrationState(state);
     });
 
-    engine.on('comfortPositionCaptured', () => {
+    engine.on('comfortPositionCaptured', (d: { scale_comfort: number; faceWidth_comfort_px: number }) => {
       setCalibrationPhase('complete');
       setCalibrationProgress(100);
+      // ✅ Atualiza estado completo no store
       const finalState = engine.getState();
-      if (finalState) setCalibrationState(finalState);
+      if (finalState) {
+        setCalibrationState(finalState);
+      }
       setPhase('calibration_complete');
     });
 
@@ -59,5 +63,9 @@ export function useCalibration() {
     return result ?? { ok: false, scale: 0 };
   }, []);
 
-  return { captureReference, captureComfortPosition, engine: engineRef.current };
+  return {
+    captureReference,
+    captureComfortPosition,
+    engine: engineRef.current,
+  };
 }

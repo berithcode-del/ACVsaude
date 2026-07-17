@@ -43,6 +43,7 @@ function ErrorScreenPhase() {
       type={errorType ?? 'generic'}
       message={errorMessage ?? undefined}
       onRetry={() => {
+        // ✅ Limpa erro mas mantém calibração se existir
         useMobileStore.getState().setError(null);
         const hasCalibration = useMobileStore.getState().calibrationState?.isCalibrated;
         useMobileStore.getState().setPhase(hasCalibration ? 'calibration_complete' : 'welcome');

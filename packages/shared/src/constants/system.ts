@@ -1,7 +1,3 @@
-// ============================================================
-// PARÂMETROS DO SISTEMA — CONSTANTES CLÍNICAS E OPERACIONAIS
-// ============================================================
-
 export const SYSTEM_PARAMS = {
   STABILITY_THRESHOLD: 60,
   HISTORY_SIZE: 10,
@@ -15,16 +11,15 @@ export const SYSTEM_PARAMS = {
   LETTERS_PER_LINE: 5,
   GAP_RATIO: 1.0,
   LINE_SPACING: 1.5,
-  MAX_REVERSALS: 3,
-  CONSECUTIVE_CORRECT: 3,
-  CONSECUTIVE_WRONG: 2,
+  MAX_REVERSALS: 6,
+  CONSECUTIVE_CORRECT: 2,
+  CONSECUTIVE_WRONG: 1,
   COMFORT_MIN_SCALE: 1.2,
   COMFORT_MAX_SCALE: 2.5,
   LOGMAR_START: 1.0,
   LOGMAR_END: -0.2,
 } as const;
 
-// Índices de landmarks do MediaPipe Face Mesh
 export const MEDIAPIPE_LANDMARKS = {
   LEFT_PUPIL: 468,
   RIGHT_PUPIL: 473,
@@ -35,10 +30,8 @@ export const MEDIAPIPE_LANDMARKS = {
   NOSE_TIP: 1,
 } as const;
 
-// Letras Sloan (ETDRS padrão)
 export const SLOAN_LETTERS = ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z'] as const;
 
-// Stack de optotipos
 export const OPTOTYPE_CONFIG = {
   fontFamily: '"Sloan", "ETDRS", sans-serif',
   lettersPerLine: SYSTEM_PARAMS.LETTERS_PER_LINE,
@@ -48,11 +41,17 @@ export const OPTOTYPE_CONFIG = {
   baseSizeMm: 60,
 } as const;
 
-// Configuração do WebSocket
 export const WEBSOCKET_CONFIG = {
   TELEMETRY_FPS: 30,
   VIDEO_FRAME_INTERVAL: 5,
   VIDEO_QUALITY: 0.6,
   RECONNECT_DELAY_MS: 2000,
   MAX_RECONNECT_ATTEMPTS: 10,
+} as const;
+
+export const MEDIAPIPE_CONFIG = {
+  MODEL_LOAD_TIMEOUT_MS: 30000,
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY_MS: 2000,
+  FALLBACK_DELEGATE: 'CPU' as const,
 } as const;
