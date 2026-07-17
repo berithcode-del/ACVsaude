@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import QRCode from 'react-qr-code';
 
 interface SessionManagerProps {
-  serverUrl: string;
+  serverUrl?: string;
   onSessionSelect: (sessionId: string) => void;
 }
 
@@ -14,7 +14,31 @@ interface Session {
   createdAt: string;
 }
 
+function getApiBase(serverUrl?: string): string {
+  if (!serverUrl) return '/api';
+  try {
+    const url = new URL(serverUrl);
+    if (url.origin === window.location.origin) {
+      return '/api';
+    }
+    return `${url.origin}/api`;
+  } catch {
+    return serverUrl + '/api';
+  }
+}
+
+function getSessionUrl(serverUrl?: string, sessionId?: string): string {
+  if (!serverUrl) return `${window.location.origin}/session/${sessionId || ''}`;
+  try {
+    const url = new URL(serverUrl);
+    return `${url.origin}/session/${sessionId || ''}`;
+  } catch {
+    return `${serverUrl}/session/${sessionId || ''}`;
+  }
+}
+
 export function SessionManager({ serverUrl, onSessionSelect }: SessionManagerProps) {
+  const apiBase = getApiBase(serverUrl);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -23,7 +47,7 @@ export function SessionManager({ serverUrl, onSessionSelect }: SessionManagerPro
   const createSession = useCallback(async () => {
     setError('');
     try {
-      const res = await fetch(`${serverUrl}/api/session`, { method: 'POST' });
+      const res = await fetch(`${apiBase}/session`, { method: 'POST' });
       if (!res.ok) throw new Error('Falha ao criar sessão');
       const data = await res.json();
       loadSessions();
@@ -31,12 +55,12 @@ export function SessionManager({ serverUrl, onSessionSelect }: SessionManagerPro
     } catch (err: any) {
       setError(err.message);
     }
-  }, [serverUrl]);
+  }, [apiBase]);
 
   const loadSessions = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${serverUrl}/api/sessions?limit=20`);
+      const res = await fetch(`${apiBase}/sessions?limit=20`);
       if (!res.ok) throw new Error('Falha ao carregar sessões');
       const data = await res.json();
       setSessions(data.sessions || []);
@@ -45,7 +69,7 @@ export function SessionManager({ serverUrl, onSessionSelect }: SessionManagerPro
     } finally {
       setLoading(false);
     }
-  }, [serverUrl]);
+  }, [apiBase]);
 
   useEffect(() => { loadSessions(); }, [loadSessions]);
 
@@ -82,7 +106,7 @@ export function SessionManager({ serverUrl, onSessionSelect }: SessionManagerPro
         {filtered.map(session => (
           <div key={session.id} className="border border-gray-200 rounded-xl p-4 space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-center py-2">
-              <QRCode value={`${serverUrl}/session/${session.id}`} size={120} />
+              <QRCode value={getSessionUrl(serverUrl, session.id)} size={120} />
             </div>
             <div className="text-center">
               <p className="font-mono font-bold text-lg">{session.code || session.id.slice(0, 8).toUpperCase()}</p>

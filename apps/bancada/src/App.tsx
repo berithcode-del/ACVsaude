@@ -6,7 +6,7 @@ import { RoundLogsTable } from './components/RoundLogsTable';
 import { ControlsPanel } from './components/ControlsPanel';
 import { EventsLog } from './components/EventsLog';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3002';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '';
 
 export default function App() {
   const handleSessionSelect = (sessionId: string) => {
