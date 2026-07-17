@@ -23,8 +23,13 @@ export interface CalibrationEventMap {
 
 export class CalibrationEngine extends EventEmitter<CalibrationEventMap> {
   private state: CalibrationState = {
-    ipd_ref_px: 0, faceWidth_ref_px: 0, faceHeight_ref_px: 0,
-    biometric_ratio: 0, scale_comfort: 1, timestamp: 0, isCalibrated: false,
+    ipd_ref_px: 0,
+    faceWidth_ref_px: 0,
+    faceHeight_ref_px: 0,
+    biometric_ratio: 0,
+    scale_comfort: 1,
+    timestamp: 0,
+    isCalibrated: false,
   };
 
   private referenceCaptured = false;
@@ -34,10 +39,13 @@ export class CalibrationEngine extends EventEmitter<CalibrationEventMap> {
   private history: number[] = [];
   private historySize = SYSTEM_PARAMS.HISTORY_SIZE;
 
-  getState(): CalibrationState { return { ...this.state }; }
+  getState(): CalibrationState {
+    return { ...this.state };
+  }
 
   captureReference(faceMesh: FaceMeshResult): boolean {
     if (this.referenceCaptured) return true;
+
     const landmarks = faceMesh.multiFaceLandmarks?.[0];
     if (!landmarks) return false;
 
@@ -47,12 +55,14 @@ export class CalibrationEngine extends EventEmitter<CalibrationEventMap> {
     const rightEar = landmarks[MEDIAPIPE_LANDMARKS.RIGHT_EAR];
     const chin = landmarks[MEDIAPIPE_LANDMARKS.CHIN];
     const forehead = landmarks[MEDIAPIPE_LANDMARKS.FOREHEAD];
+
     if (!leftPupil || !rightPupil || !leftEar || !rightEar || !chin || !forehead) return false;
 
     const ipd_px = Math.hypot(leftPupil.x - rightPupil.x, leftPupil.y - rightPupil.y);
     const faceWidth_px = Math.hypot(leftEar.x - rightEar.x, leftEar.y - rightEar.y);
     const faceHeight_px = Math.hypot(chin.x - forehead.x, chin.y - forehead.y);
 
+    // Estabilidade: variância do nariz (ponto 1)
     const nose = landmarks[1];
     this.history.push(nose.x);
     if (this.history.length > this.historySize) this.history.shift();
@@ -63,7 +73,8 @@ export class CalibrationEngine extends EventEmitter<CalibrationEventMap> {
         this.stabilityFrames++;
         this.emit('stabilizing', { progress: this.stabilityFrames / this.stabilityThreshold });
       } else {
-        this.stabilityFrames = 0; this.history = [];
+        this.stabilityFrames = 0;
+        this.history = [];
         this.emit('stabilizing', { progress: 0 });
       }
     }
@@ -79,11 +90,13 @@ export class CalibrationEngine extends EventEmitter<CalibrationEventMap> {
       this.emit('referenceCaptured', this.getState());
       return true;
     }
+
     return false;
   }
 
   captureComfortPosition(faceMesh: FaceMeshResult): { ok: boolean; scale: number } {
     if (!this.referenceCaptured || this.comfortCaptured) return { ok: true, scale: this.state.scale_comfort };
+
     const landmarks = faceMesh.multiFaceLandmarks?.[0];
     if (!landmarks) return { ok: false, scale: 0 };
 
@@ -94,8 +107,15 @@ export class CalibrationEngine extends EventEmitter<CalibrationEventMap> {
     const faceWidth_px = Math.hypot(leftEar.x - rightEar.x, leftEar.y - rightEar.y);
     const scale = faceWidth_px / this.state.faceWidth_ref_px;
 
-    if (scale < SYSTEM_PARAMS.COMFORT_MIN_SCALE) { this.emit('comfortTooClose'); return { ok: false, scale }; }
-    if (scale > SYSTEM_PARAMS.COMFORT_MAX_SCALE) { this.emit('comfortTooFar'); return { ok: false, scale }; }
+    if (scale < SYSTEM_PARAMS.COMFORT_MIN_SCALE) {
+      this.emit('comfortTooClose');
+      return { ok: false, scale };
+    }
+
+    if (scale > SYSTEM_PARAMS.COMFORT_MAX_SCALE) {
+      this.emit('comfortTooFar');
+      return { ok: false, scale };
+    }
 
     this.state.scale_comfort = scale;
     this.state.timestamp = Date.now();
@@ -110,7 +130,15 @@ export class CalibrationEngine extends EventEmitter<CalibrationEventMap> {
   }
 
   reset(): void {
-    this.state = { ipd_ref_px: 0, faceWidth_ref_px: 0, faceHeight_ref_px: 0, biometric_ratio: 0, scale_comfort: 1, timestamp: 0, isCalibrated: false };
+    this.state = {
+      ipd_ref_px: 0,
+      faceWidth_ref_px: 0,
+      faceHeight_ref_px: 0,
+      biometric_ratio: 0,
+      scale_comfort: 1,
+      timestamp: 0,
+      isCalibrated: false,
+    };
     this.referenceCaptured = false;
     this.comfortCaptured = false;
     this.stabilityFrames = 0;

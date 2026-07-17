@@ -7,7 +7,7 @@ export interface TrackingResult {
   faceHeight_px: number;
   ipd_estimated_px: number;
   scale_current: number;
-  distance_ratio: number;
+  distance_mm: number | null;
   isInRange: boolean;
   stability: number;
 }

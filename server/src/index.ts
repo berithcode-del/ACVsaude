@@ -1,25 +1,117 @@
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import { RoomManager } from './room-manager.js';
+import {
+  getDatabase,
+  createPatient,
+  createSession,
+  updateSessionCalibration,
+  addRound,
+  addTelemetryFrame,
+  addEvent,
+  finishSession,
+  abortSession,
+  getAllSessions,
+  getSessionDetails,
+  getPatientHistory,
+  searchPatients,
+  exportSessionToJSON,
+  exportSessionToCSV,
+} from './db.js';
 
 const PORT = Number(process.env.PORT) || 3002;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
-const httpServer = createServer((_req, res) => {
-  if (_req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', rooms: roomManager.getSessionIds().length }));
-    return;
+const httpServer = createServer(async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+  const url = new URL(req.url || '/', `http://localhost:${PORT}`);
+  const pathname = url.pathname;
+
+  try {
+    if (pathname === '/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', rooms: (roomManager as any).getSessionIds?.()?.length || 0, timestamp: Date.now() }));
+      return;
+    }
+
+    if (pathname === '/api/session' && req.method === 'POST') {
+      const sessionId = roomManager.createSession();
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ sessionId }));
+      return;
+    }
+
+    if (pathname === '/api/patients' && req.method === 'POST') {
+      const body = await readBody(req);
+      createPatient(JSON.parse(body));
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+      return;
+    }
+
+    if (pathname === '/api/sessions' && req.method === 'GET') {
+      const limit = Number(url.searchParams.get('limit')) || 50;
+      const offset = Number(url.searchParams.get('offset')) || 0;
+      const sessions = getAllSessions(limit, offset);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ sessions, count: sessions.length }));
+      return;
+    }
+
+    if (pathname.startsWith('/api/sessions/') && pathname.endsWith('/details') && req.method === 'GET') {
+      const sessionId = pathname.split('/')[3];
+      const details = getSessionDetails(sessionId);
+      if (!details) { res.writeHead(404); res.end(JSON.stringify({ error: 'Sessão não encontrada' })); return; }
+      res.writeHead(200); res.end(JSON.stringify(details));
+      return;
+    }
+
+    if (pathname.startsWith('/api/sessions/') && pathname.endsWith('/export/json') && req.method === 'GET') {
+      const sessionId = pathname.split('/')[3];
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="sessao-${sessionId.slice(0, 8)}.json"` });
+      res.end(exportSessionToJSON(sessionId));
+      return;
+    }
+
+    if (pathname.startsWith('/api/sessions/') && pathname.endsWith('/export/csv') && req.method === 'GET') {
+      const sessionId = pathname.split('/')[3];
+      res.writeHead(200, { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="sessao-${sessionId.slice(0, 8)}.csv"` });
+      res.end(exportSessionToCSV(sessionId));
+      return;
+    }
+
+    if (pathname.startsWith('/api/patients/') && pathname.endsWith('/history') && req.method === 'GET') {
+      const patientId = pathname.split('/')[3];
+      res.writeHead(200); res.end(JSON.stringify(getPatientHistory(patientId)));
+      return;
+    }
+
+    if (pathname === '/api/patients/search' && req.method === 'GET') {
+      const query = url.searchParams.get('q') || '';
+      res.writeHead(200); res.end(JSON.stringify({ patients: searchPatients(query), query }));
+      return;
+    }
+
+    res.writeHead(404); res.end(JSON.stringify({ error: 'Not Found' }));
+  } catch (err: any) {
+    console.error('[server] Erro:', err.message);
+    res.writeHead(500); res.end(JSON.stringify({ error: err.message }));
   }
-  if (_req.url === '/api/session' && _req.method === 'POST') {
-    const sessionId = roomManager.createSession();
-    res.writeHead(201, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ sessionId }));
-    return;
-  }
-  res.writeHead(404);
-  res.end('Not Found');
 });
+
+function readBody(req: any): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+    req.on('end', () => resolve(body));
+    req.on('error', reject);
+  });
+}
 
 const io = new Server(httpServer, {
   cors: { origin: CORS_ORIGIN, methods: ['GET', 'POST'] },
@@ -32,66 +124,67 @@ const roomManager = new RoomManager();
 io.on('connection', (socket) => {
   let currentSession: string | null = null;
 
-  socket.on('join_session', ({ sessionId, role }: { sessionId: string; role: 'mobile' | 'bancada' }) => {
-    if (!sessionId || !role) {
-      socket.emit('error_message', { message: 'sessionId e role são obrigatórios' });
-      return;
-    }
-
-    const joined = roomManager.joinSession(sessionId, socket.id, role);
-    if (!joined) {
-      socket.emit('error_message', { message: 'Sessão não encontrada' });
-      return;
-    }
-
-    currentSession = sessionId;
-    socket.join(sessionId);
-    socket.data.role = role;
-    socket.data.sessionId = sessionId;
-
-    socket.emit('session_joined', { sessionId, role, peers: roomManager.getPeerCount(sessionId) });
-
-      socket.to(sessionId).emit('peer_connected', { role });
-
-    console.log(`[connect] ${role} ${socket.id} -> sala ${sessionId}`);
+  socket.on('join_session', (data: { sessionId: string; role: 'mobile' | 'bancada'; patientInfo?: any; deviceInfo?: any }) => {
+    if (!data.sessionId || !data.role) { socket.emit('error_message', { message: 'sessionId e role são obrigatórios' }); return; }
+    const joined = roomManager.joinSession(data.sessionId, socket.id, data.role);
+    if (!joined) { socket.emit('error_message', { message: 'Sessão não encontrada' }); return; }
+    currentSession = data.sessionId;
+    socket.join(data.sessionId);
+    socket.data.role = data.role;
+    socket.data.sessionId = data.sessionId;
+    if (data.patientInfo) { try { createPatient(data.patientInfo); } catch {} }
+    if (data.role === 'mobile' && data.deviceInfo) { try { createSession({ id: data.sessionId, patientId: data.patientInfo?.id, sessionCode: data.sessionId.slice(0, 8).toUpperCase(), deviceInfo: data.deviceInfo }); } catch {} }
+    socket.emit('session_joined', { sessionId: data.sessionId, role: data.role, peers: roomManager.getPeerCount(data.sessionId) });
+    socket.to(data.sessionId).emit('peer_connected', { role: data.role });
+    console.log(`[connect] ${data.role} ${socket.id} -> sala ${data.sessionId}`);
   });
 
-  socket.on('telemetry', (data) => {
+  socket.on('calibration_data', (data: any) => {
     if (!currentSession) return;
+    try { updateSessionCalibration(currentSession, data); } catch (err) { console.error('[db] Erro calibração:', err); }
+    socket.to(currentSession).emit('calibration_data', data);
+  });
+
+  socket.on('telemetry', (data: { frames: any[] }) => {
+    if (!currentSession) return;
+    try { data.frames?.forEach((frame, idx) => { addTelemetryFrame(currentSession!, { frameIndex: idx, faceDetected: frame.faceDetected, faceWidthPx: frame.faceWidthPx, faceHeightPx: frame.faceHeightPx, ipdEstimatedPx: frame.ipdEstimatedPx, scaleCurrent: frame.scaleCurrent, distanceMm: frame.distanceMm, stability: frame.stability, isInRange: frame.isInRange }); }); } catch (err) { console.error('[db] Erro telemetria:', err); }
     socket.to(currentSession).emit('telemetry', data);
   });
 
-  socket.on('exam_event', (data) => {
+  socket.on('exam_event', (data: { event: any }) => {
     if (!currentSession) return;
+    try {
+      addEvent(currentSession, data.event?.kind || 'unknown', data.event);
+      if (data.event?.kind === 'round_answered') {
+        addRound(currentSession, { roundIndex: data.event.roundIndex, logMAR: data.event.logMAR, targetLetter: data.event.targetLetter, displayLetters: data.event.displayLetters || [], targetIndex: 0, correct: data.event.correct, source: data.event.responseSource || 'manual', responseTimeMs: data.event.responseTimeMs || 0, recognizedText: data.event.recognizedText, confidence: data.event.confidence, distanceMm: data.event.distanceMm, scale: data.event.scale, stability: data.event.stability });
+      }
+      if (data.event?.kind === 'test_finished') {
+        finishSession(currentSession, { finalLogMAR: data.event.logMAR || 0, finalSnellen: data.event.snellen || '', finalDecimal: data.event.decimal || 0, totalReversals: data.event.reversals || 0, voiceFallbackCount: data.event.voiceFallbackCount || 0, recalibrationCount: data.event.recalibrationCount || 0, driftEventsCount: data.event.driftEventsCount || 0, averageResponseTimeMs: data.event.averageResponseTimeMs || 0 });
+      }
+    } catch (err) { console.error('[db] Erro evento:', err); }
     socket.to(currentSession).emit('exam_event', data);
   });
 
-  socket.on('video_frame', (data) => {
-    if (!currentSession) return;
-    socket.to(currentSession).emit('video_frame', data);
-  });
-
-  socket.on('control', (data) => {
-    if (!currentSession) return;
-    socket.to(currentSession).emit('control', data);
-  });
-
-  socket.on('calibration_data', (data) => {
-    if (!currentSession) return;
-    socket.to(currentSession).emit('calibration_data', data);
-  });
+  socket.on('video_frame', (data) => { if (currentSession) socket.to(currentSession).emit('video_frame', data); });
+  socket.on('control', (data) => { if (currentSession) socket.to(currentSession).emit('control', data); });
 
   socket.on('disconnect', () => {
     if (currentSession) {
       const role = socket.data.role;
       roomManager.leaveSession(currentSession, socket.id);
       socket.to(currentSession).emit('peer_disconnected', { role });
+      if (role === 'mobile') { try { abortSession(currentSession); } catch {} }
       console.log(`[disconnect] ${role} ${socket.id} saiu da sala ${currentSession}`);
     }
   });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`[server] Socket.io rodando em http://localhost:${PORT}`);
-  console.log(`[server] Health: http://localhost:${PORT}/health`);
-});
+async function start() {
+  await getDatabase();
+  httpServer.listen(PORT, () => {
+    console.log(`[server] Socket.io + API REST rodando em http://localhost:${PORT}`);
+    console.log(`[server] Health: http://localhost:${PORT}/health`);
+  });
+}
+
+start();

@@ -7,7 +7,10 @@ import type { SessionLogger } from '../engine/SessionLogger';
 
 const globalDetector = new FaceDetector();
 
-export function useTracking(calibration: CalibrationState | null, logger?: SessionLogger | null) {
+export function useTracking(
+  calibration: CalibrationState | null,
+  logger?: SessionLogger | null
+) {
   const detectorRef = useRef<FaceDetector>(globalDetector);
   const trackingRef = useRef<HybridTrackingEngine | null>(null);
   const frameCountRef = useRef(0);

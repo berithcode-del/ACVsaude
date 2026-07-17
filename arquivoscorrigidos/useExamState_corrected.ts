@@ -1,20 +1,14 @@
 import { useRef, useCallback } from 'react';
 import { useMobileStore } from '../store';
 import { StaircaseSession } from '../engine/StaircaseSession';
-import type { RoundLog } from '@visao/shared';
-
-type ExamSummary = {
-  logMAR: number;
-  snellen: string;
-  decimal: number;
-  reversals: number;
-};
+import type { RoundLog, ExamSummary } from '@visao/shared';
 
 export function useExamState() {
   const sessionRef = useRef<StaircaseSession | null>(null);
   const roundIndexRef = useRef(0);
   const setPhase = useMobileStore((s) => s.setPhase);
   const setExamResult = useMobileStore((s) => s.setExamResult);
+  const setError = useMobileStore((s) => s.setError);
   const setExamMetrics = useMobileStore((s) => s.setExamMetrics);
 
   const startExam = useCallback(() => {
@@ -51,18 +45,17 @@ export function useExamState() {
       targetLetter: round.targetLetter,
       displayLetters: round.displayLetters,
       targetIndex: round.targetIndex,
-      response: {
-        correct: round.correct,
-        source: extra?.source ?? 'manual',
-        responseTimeMs: extra?.responseTimeMs ?? 0,
-        recognizedText: extra?.recognizedText,
-        confidence: extra?.confidence,
-      },
-      distanceAtPresentation: extra?.distanceMm ?? 0,
-      scaleAtPresentation: extra?.scale ?? 0,
-      stabilityAtPresentation: extra?.stability ?? 0,
+      correct: round.correct,
+      responseSource: extra?.source ?? 'manual',
+      responseTimeMs: extra?.responseTimeMs ?? 0,
+      recognizedText: extra?.recognizedText,
+      confidence: extra?.confidence,
+      distanceAtPresentation: extra?.distanceMm ?? null,
+      scaleAtPresentation: extra?.scale ?? null,
+      stabilityAtPresentation: extra?.stability ?? null,
     };
 
+    // ✅ Envia round via WebSocket (se disponível)
     const ws = (window as any).__acv_websocket__;
     ws?.sendExamEvent?.({
       event: {
@@ -78,6 +71,7 @@ export function useExamState() {
       setExamResult(summary);
       setPhase('exam_finished');
 
+      // ✅ Envia resultado final via WebSocket
       ws?.sendExamEvent?.({
         event: {
           kind: 'test_finished',

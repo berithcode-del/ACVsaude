@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    volumes:
+      - acvsaude_data:/data
+    environment:
+      - PORT=3002
+      - DB_PATH=/data/acvsaude.db
+      - CORS_ORIGIN=*
+    restart: unless-stopped
+
+  mobile:
+    build:
+      context: ./apps/mobile
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_SERVER_URL=http://localhost:3002
+    depends_on:
+      - server
+    restart: unless-stopped
+
+  bancada:
+    build:
+      context: ./apps/bancada
+      dockerfile: Dockerfile
+    ports:
+      - "5174:5174"
+    environment:
+      - VITE_SERVER_URL=http://localhost:3002
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  acvsaude_data:

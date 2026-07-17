@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Instala dependências nativas para better-sqlite3
+RUN apk add --no-cache python3 make g++
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+COPY . .
+RUN npm run typecheck || true
+
+# Cria diretório de dados
+RUN mkdir -p /data
+
+EXPOSE 3002
+
+ENV PORT=3002
+ENV DB_PATH=/data/acvsaude.db
+
+CMD ["node", "dist/index.js"]

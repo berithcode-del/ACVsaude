@@ -22,15 +22,13 @@ export function ExamScreen() {
   const calibrationState = useMobileStore((s) => s.calibrationState);
 
   const { getRoundLetters, recordResponse, startExam } = useExamState();
-  const { connect, getLogger } = useWebSocket();
-  const logger = getLogger();
+  const { connect, sendVideoFrame } = useWebSocket();
 
   const { startCamera, getTrackingResult, getDetector, stopDetector } = useTracking(
-    calibrationState,
-    logger
+    calibrationState
   );
 
-  const { startStream } = useVideoStream(getDetector(), logger);
+  const { startStream } = useVideoStream(getDetector(), sendVideoFrame);
   const { startListening, onResult } = useVoiceRecognition();
 
   const handleVideoReady = useCallback((video: HTMLVideoElement) => {

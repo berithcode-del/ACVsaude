@@ -1,5 +1,16 @@
 import type { ExamResult } from '@visao/shared';
-import { SYSTEM_PARAMS, logMARToSnellen, logMARToDecimal } from '@visao/shared';
+import { SYSTEM_PARAMS, logMARToSnellen, logMARToDecimal, logMARToArcmin } from '@visao/shared';
+
+export interface RoundRecord {
+  logMAR: number;
+  angleArcmin: number;
+  targetLetter: string;
+  displayLetters: string[];
+  targetIndex: number;
+  correct: boolean;
+  finished: boolean;
+  snellen: string;
+}
 
 type SessionListener = (detail: any) => void;
 
@@ -45,7 +56,7 @@ export class StaircaseSession {
     this.currentTargetIndex = Math.floor(Math.random() * letters.length);
   }
 
-  recordResponse(isCorrect: boolean): void {
+  recordResponse(isCorrect: boolean): RoundRecord {
     if (isCorrect) {
       this.consecutiveCorrect++;
       this.consecutiveWrong = 0;
@@ -65,6 +76,17 @@ export class StaircaseSession {
     }
 
     this.roundIndex++;
+
+    return {
+      logMAR: this.currentLogMAR,
+      angleArcmin: logMARToArcmin(this.currentLogMAR),
+      targetLetter: this.currentLetters[this.currentTargetIndex] || '',
+      displayLetters: [...this.currentLetters],
+      targetIndex: this.currentTargetIndex,
+      correct: isCorrect,
+      finished: this.isComplete(),
+      snellen: logMARToSnellen(this.currentLogMAR),
+    };
   }
 
   private moveDown(): void {
@@ -119,6 +141,15 @@ export class StaircaseSession {
 
   private emit(event: string, detail?: any): void {
     this.listeners.get(event)?.forEach((cb) => cb(detail));
+  }
+
+  getSummary(): ExamResult {
+    return {
+      logMAR: this.currentLogMAR,
+      snellen: logMARToSnellen(this.currentLogMAR),
+      decimal: logMARToDecimal(this.currentLogMAR),
+      reversals: this.reversals,
+    };
   }
 
   reset(): void {

@@ -39,7 +39,7 @@ export class HybridTrackingEngine {
 
     const scale_current = faceWidth_smoothed / this.calibration.faceWidth_ref_px;
 
-    const distance_ratio = scale_current > 0 ? 1 / scale_current : 0;
+    const distance_mm = scale_current > 0 ? Math.round(600 / scale_current) : null;
 
     const isInRange = this.checkRangeWithHysteresis(scale_current);
 
@@ -50,7 +50,7 @@ export class HybridTrackingEngine {
       faceHeight_px: this.getFaceHeight(landmarks),
       ipd_estimated_px: ipd_estimated,
       scale_current,
-      distance_ratio,
+      distance_mm,
       isInRange,
       stability,
     };
