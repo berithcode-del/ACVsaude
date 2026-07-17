@@ -2,12 +2,22 @@ import { create } from 'zustand';
 import type { ExamPhase, DockState, ExamResult, VoiceState } from '@visao/shared';
 import type { CalibrationState } from './engine/CalibrationEngine';
 
+export interface PatientInfo {
+  patientId: string;
+  name: string;
+  birthDate: string;
+  gender: 'M' | 'F' | 'O';
+  eye: 'OD' | 'OE';
+  notes: string;
+}
+
 export type ErrorType = 'camera' | 'microphone' | 'webgl' | 'generic' | null;
 
 interface MobileState {
   phase: ExamPhase;
   dockState: DockState;
   sessionId: string | null;
+  patientInfo: PatientInfo | null;
   voiceEnabled: boolean;
   voiceState: VoiceState;
   examResult: ExamResult | null;
@@ -29,6 +39,7 @@ interface MobileState {
   setPhase: (p: ExamPhase) => void;
   setDockState: (s: DockState) => void;
   setSessionId: (id: string) => void;
+  setPatientInfo: (info: PatientInfo | null) => void;
   setVoiceEnabled: (v: boolean) => void;
   setVoiceState: (s: VoiceState) => void;
   setExamResult: (r: ExamResult) => void;
@@ -45,6 +56,7 @@ const initialState = {
   phase: 'welcome' as ExamPhase,
   dockState: 'waiting' as DockState,
   sessionId: null as string | null,
+  patientInfo: null as PatientInfo | null,
   voiceEnabled: true,
   voiceState: 'idle' as VoiceState,
   examResult: null as ExamResult | null,
@@ -67,6 +79,7 @@ export const useMobileStore = create<MobileState>((set) => ({
   setPhase: (phase) => set({ phase }),
   setDockState: (dockState) => set({ dockState }),
   setSessionId: (sessionId) => set({ sessionId }),
+  setPatientInfo: (patientInfo) => set({ patientInfo }),
   setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
   setVoiceState: (voiceState) => set({ voiceState }),
   setExamResult: (examResult) => set({ examResult }),
