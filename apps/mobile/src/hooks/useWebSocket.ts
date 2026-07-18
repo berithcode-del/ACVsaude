@@ -5,8 +5,6 @@ import type { TelemetryFrameData } from '@visao/shared';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
-
 const socketRef = { current: null as Socket | null };
 const reconnectAttempts = { current: 0 };
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -32,7 +30,7 @@ function doConnect() {
   if (socketRef.current?.connected) return;
 
   notifyStatus('connecting');
-  const socket = io(API_URL, { transports: ['websocket'], reconnection: false });
+  const socket = io('', { transports: ['websocket'], reconnection: false });
   socketRef.current = socket;
 
   socket.on('connect', () => {

@@ -7,8 +7,6 @@ export interface PatientInfo {
   name: string;
   birthDate: string;
   gender: 'M' | 'F' | 'O';
-  eye: 'OD' | 'OE';
-  notes: string;
 }
 
 export type ErrorType = 'camera' | 'microphone' | 'webgl' | 'generic' | null;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMobileStore, type PatientInfo } from '../store';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function WelcomeScreen() {
   const setPhase = useMobileStore((s) => s.setPhase);
@@ -13,8 +13,6 @@ export function WelcomeScreen() {
   const [patientId, setPatientId] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'M' | 'F' | 'O'>('M');
-  const [eye, setEye] = useState<'OD' | 'OE'>('OD');
-  const [notes, setNotes] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setErrorLocal] = useState('');
 
@@ -31,7 +29,7 @@ export function WelcomeScreen() {
         body: JSON.stringify({
           id: patientId.trim(),
           name: name.trim(),
-          birthDate: birthDate || undefined,
+          birthDate: birthDate ? birthDate.split('/').reverse().join('-') : undefined,
           gender: gender || undefined,
         }),
       });
@@ -48,8 +46,6 @@ export function WelcomeScreen() {
         name: name.trim(),
         birthDate,
         gender,
-        eye,
-        notes,
       };
 
       setSessionId(data.sessionId);
@@ -103,9 +99,16 @@ export function WelcomeScreen() {
             <label className="block text-xs font-medium text-neutral-700 mb-1" htmlFor="birthDate">Nascimento</label>
             <input
               id="birthDate"
-              type="date"
+              type="text"
+              inputMode="numeric"
               value={birthDate}
-              onChange={e => setBirthDate(e.target.value)}
+              onChange={e => {
+                let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+                if (v.length > 4) v = v.slice(0, 4) + '/' + v.slice(4);
+                if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+                setBirthDate(v);
+              }}
+              placeholder="DD/MM/AAAA"
               className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
@@ -123,40 +126,6 @@ export function WelcomeScreen() {
             </select>
           </div>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-neutral-700 mb-2">Olho a examinar</label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setEye('OD')}
-              className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                eye === 'OD' ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-neutral-700 border-neutral-300'
-              }`}
-            >
-              Direito (OD)
-            </button>
-            <button
-              type="button"
-              onClick={() => setEye('OE')}
-              className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                eye === 'OE' ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-neutral-700 border-neutral-300'
-              }`}
-            >
-              Esquerdo (OE)
-            </button>
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-neutral-700 mb-1" htmlFor="patientNotes">Observações</label>
-          <textarea
-            id="patientNotes"
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-neutral-300 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            rows={2}
-            placeholder="Observações clínicas..."
-          />
-        </div>
       </div>
 
       {error && <p className="text-error-500 text-sm text-center" role="alert">{error}</p>}
@@ -169,7 +138,6 @@ export function WelcomeScreen() {
       >
         {creating ? 'Criando sessão...' : 'Iniciar Exame'}
       </button>
-      <p className="text-xs text-neutral-400">Servidor: {API_URL}</p>
     </div>
   );
 }
