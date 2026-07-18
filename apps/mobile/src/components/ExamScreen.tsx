@@ -14,14 +14,14 @@ import type { TrackingResult } from '@visao/shared';
 export function ExamScreen() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
-  const [letters, setLetters] = useState<string[]>(['V', 'S', 'D', 'H', 'K']);
+  const [letters, setLetters] = useState<string[]>([]);
   const [targetIndex, setTargetIndex] = useState(0);
   const [tracking, setTracking] = useState<TrackingResult | null>(null);
 
   const setPhase = useMobileStore((s) => s.setPhase);
   const calibrationState = useMobileStore((s) => s.calibrationState);
 
-  const { getRoundLetters, recordResponse, startExam } = useExamState();
+  const { getRoundLetters, getCurrentTargetIndex, advanceRound, recordResponse, startExam } = useExamState();
   const { connect, sendVideoFrame } = useWebSocket();
 
   const { startCamera, getTrackingResult, getDetector, stopDetector } = useTracking(
@@ -37,12 +37,10 @@ export function ExamScreen() {
   }, [startCamera]);
 
   const generateNextRound = useCallback(() => {
-    const l = getRoundLetters();
-    if (l.length > 0) {
-      setLetters(l);
-      setTargetIndex(Math.floor(Math.random() * l.length));
-    }
-  }, [getRoundLetters]);
+    advanceRound();
+    setLetters(getRoundLetters());
+    setTargetIndex(getCurrentTargetIndex());
+  }, [advanceRound, getRoundLetters, getCurrentTargetIndex]);
 
   useEffect(() => {
     if (!calibrationState?.isCalibrated) {
@@ -82,7 +80,9 @@ export function ExamScreen() {
         setPhase('exam_finished');
         return;
       }
-      setTimeout(() => generateNextRound(), 500);
+      setTimeout(() => {
+        generateNextRound();
+      }, 500);
     });
   }, [letters, targetIndex, onResult, recordResponse, generateNextRound, setPhase, stopDetector]);
 

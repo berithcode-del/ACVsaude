@@ -221,7 +221,7 @@ export function finishSession(sessionId: string, result: { finalLogMAR: number; 
 }
 
 export function abortSession(sessionId: string): void {
-  db!.run(`UPDATE sessions SET status='aborted', finished_at=? WHERE id=?`, [Date.now(), sessionId]);
+  db!.run(`UPDATE sessions SET status='aborted', finished_at=? WHERE id=? AND status NOT IN ('completed', 'aborted')`, [Date.now(), sessionId]);
   saveDatabase(db!);
 }
 

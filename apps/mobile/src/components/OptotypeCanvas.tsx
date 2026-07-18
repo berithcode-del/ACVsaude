@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMobileStore } from '../store';
+import { logMARToMultiplier } from '@visao/shared';
 import type { TrackingResult } from '@visao/shared';
 
 interface OptotypeCanvasProps {
@@ -31,7 +32,7 @@ export function OptotypeCanvas({ letters, targetIndex, tracking }: OptotypeCanva
 
       const baseSize = 32;
       const scaleMult = tracking ? 0.3 + tracking.stability * 0.7 : 1;
-      const fontSize = baseSize * (1 + (1 - currentLogMAR) * 0.5) * scaleMult;
+      const fontSize = baseSize * logMARToMultiplier(currentLogMAR) * scaleMult;
       const gap = fontSize * 0.5;
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;

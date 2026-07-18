@@ -29,7 +29,7 @@ export function logMARToSnellen(logMAR: number): string {
 }
 
 export function logMARToMultiplier(logMAR: number): number {
-  return Math.pow(10, -logMAR);
+  return Math.pow(10, logMAR);
 }
 
 export function logMARToDecimal(logMAR: number): number {

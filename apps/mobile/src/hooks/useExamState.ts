@@ -4,6 +4,21 @@ import { StaircaseSession } from '../engine/StaircaseSession';
 import { useWebSocket } from './useWebSocket';
 import type { RoundLog, ExamSummary, ExamResult } from '@visao/shared';
 
+const SLOAN_LETTERS = ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z'] as const;
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickLetters(): string[] {
+  return shuffleArray([...SLOAN_LETTERS]).slice(0, 5);
+}
+
 export function useExamState() {
   const sessionRef = useRef<StaircaseSession | null>(null);
   const roundIndexRef = useRef(0);
@@ -16,10 +31,22 @@ export function useExamState() {
   const startExam = useCallback(() => {
     sessionRef.current = new StaircaseSession();
     roundIndexRef.current = 0;
+    const letters = pickLetters();
+    sessionRef.current.setRoundLetters(letters);
   }, []);
 
-  const getRoundLetters = useCallback(() => {
+  const getRoundLetters = useCallback((): string[] => {
     return sessionRef.current?.getCurrentLetters() ?? [];
+  }, []);
+
+  const getCurrentTargetIndex = useCallback((): number => {
+    return sessionRef.current?.getCurrentTargetIndex() ?? 0;
+  }, []);
+
+  const advanceRound = useCallback(() => {
+    if (!sessionRef.current) return;
+    const letters = pickLetters();
+    sessionRef.current.setRoundLetters(letters);
   }, []);
 
   const recordResponse = useCallback((
@@ -89,6 +116,8 @@ export function useExamState() {
   return {
     startExam,
     getRoundLetters,
+    getCurrentTargetIndex,
+    advanceRound,
     recordResponse,
   };
 }
