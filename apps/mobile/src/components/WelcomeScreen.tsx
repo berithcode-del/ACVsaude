@@ -4,6 +4,7 @@ import { useMobileStore, type PatientInfo } from '../store';
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function WelcomeScreen() {
+  const sessionId = useMobileStore((s) => s.sessionId);
   const setPhase = useMobileStore((s) => s.setPhase);
   const setSessionId = useMobileStore((s) => s.setSessionId);
   const setPatientInfo = useMobileStore((s) => s.setPatientInfo);
@@ -37,9 +38,13 @@ export function WelcomeScreen() {
         console.warn('[WelcomeScreen] Aviso ao criar paciente:', patientRes.status);
       }
 
-      const res = await fetch(`${API_URL}/api/session`, { method: 'POST' });
-      if (!res.ok) throw new Error('Falha ao criar sessão no servidor');
-      const data = await res.json();
+      let existingSessionId = sessionId;
+      if (!existingSessionId) {
+        const res = await fetch(`${API_URL}/api/session`, { method: 'POST' });
+        if (!res.ok) throw new Error('Falha ao criar sessão no servidor');
+        const data = await res.json();
+        existingSessionId = data.sessionId;
+      }
 
       const info: PatientInfo = {
         patientId: patientId.trim(),
@@ -48,7 +53,7 @@ export function WelcomeScreen() {
         gender,
       };
 
-      setSessionId(data.sessionId);
+      setSessionId(existingSessionId);
       setPatientInfo(info);
       setPhase('calibration_step1');
     } catch (err: any) {

@@ -58,8 +58,8 @@ export function useBancadaSocket() {
       store.addEvent(data.event);
     });
 
-    socket.on('video_frame', (data: { imageData: string }) => {
-      store.setLatestFrame(data.imageData);
+    socket.on('video_frame', (data: { dataUrl: string }) => {
+      store.setLatestFrame(data.dataUrl);
     });
 
     socketRef.current = socket;

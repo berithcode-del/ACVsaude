@@ -1,19 +1,26 @@
 import { useEffect, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useMobileStore } from '../store';
-import type { TelemetryFrameData } from '@visao/shared';
+import type { TelemetryFrameData, ControlAction, ControlParameter } from '@visao/shared';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+type ControlListener = (action: ControlAction, parameter?: ControlParameter) => void;
 
 const socketRef = { current: null as Socket | null };
 const reconnectAttempts = { current: 0 };
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let listeners: Array<(s: ConnectionStatus) => void> = [];
+let controlListeners: ControlListener[] = [];
 let currentStatus: ConnectionStatus = 'disconnected';
 
 function notifyStatus(s: ConnectionStatus) {
   currentStatus = s;
   listeners.forEach(l => l(s));
+}
+
+function notifyControl(action: ControlAction, parameter?: ControlParameter) {
+  controlListeners.forEach(l => l(action, parameter));
 }
 
 function scheduleReconnect() {
@@ -66,6 +73,12 @@ function doConnect() {
       sendCalibrationData: (data: any) => socketRef.current?.emit('calibration_data', data),
       sendVideoFrame: (dataUrl: string) => socketRef.current?.emit('video_frame', { dataUrl }),
     };
+  });
+
+  socket.on('control', (data: { command: { action: ControlAction; parameter?: ControlParameter } }) => {
+    if (data?.command?.action) {
+      notifyControl(data.command.action, data.command.parameter);
+    }
   });
 
   socket.on('peer_connected', () => notifyStatus('connected'));
@@ -125,4 +138,9 @@ export function useWebSocket() {
     sendVideoFrame,
     status,
   };
+}
+
+export function onControlEvent(listener: ControlListener): () => void {
+  controlListeners.push(listener);
+  return () => { controlListeners = controlListeners.filter(l => l !== listener); };
 }

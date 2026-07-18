@@ -12,8 +12,11 @@ interface SessionState {
 export class RoomManager {
   private sessions = new Map<string, SessionState>();
   private readonly SESSION_TTL = 3_600_000;
+  private readonly CLEANUP_INTERVAL = 60_000;
+  private cleanupTimer: ReturnType<typeof setInterval> | null = null;
 
   createSession(): string {
+    this.purgeOrphanedSessions();
     const sessionId = crypto.randomUUID();
     this.sessions.set(sessionId, {
       sessionId,
@@ -23,6 +26,9 @@ export class RoomManager {
       lastActivity: Date.now(),
       connected: new Set(),
     });
+    if (!this.cleanupTimer) {
+      this.cleanupTimer = setInterval(() => this.purgeOrphanedSessions(), this.CLEANUP_INTERVAL);
+    }
     return sessionId;
   }
 
@@ -79,8 +85,24 @@ export class RoomManager {
     }, this.SESSION_TTL);
   }
 
+  private purgeOrphanedSessions(): void {
+    const now = Date.now();
+    for (const [id, session] of this.sessions) {
+      if (session.connected.size === 0 && now - session.lastActivity > this.SESSION_TTL) {
+        this.sessions.delete(id);
+      }
+    }
+  }
+
   getPeerCount(sessionId: string): number {
     const session = this.sessions.get(sessionId);
     return session ? session.connected.size : 0;
+  }
+
+  destroy(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
   }
 }

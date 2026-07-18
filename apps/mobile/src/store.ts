@@ -47,8 +47,17 @@ interface MobileState {
   setTrackingMetrics: (s: number, d: number | null, r: boolean) => void;
   setExamMetrics: (logMAR: number, snellen: string, round: number) => void;
   setError: (m: string | null, type?: ErrorType) => void;
+  updateParam: (name: string, value: number) => void;
   reset: () => void;
 }
+
+const defaultParams: Record<string, number> = {
+  drift_warn_mm: 20,
+  drift_severe_mm: 50,
+  stability_threshold: 60,
+  base_distance_m: 0.4,
+  correction_factor: 1.0,
+};
 
 const initialState = {
   phase: 'welcome' as ExamPhase,
@@ -69,6 +78,7 @@ const initialState = {
   roundIndex: 0,
   errorMessage: null as string | null,
   errorType: null as ErrorType,
+  params: { ...defaultParams },
 };
 
 export const useMobileStore = create<MobileState>((set) => ({
@@ -93,5 +103,6 @@ export const useMobileStore = create<MobileState>((set) => ({
     }
     set({ errorMessage, errorType, phase: 'error' });
   },
-  reset: () => set(initialState),
+  updateParam: (name, value) => set((s) => ({ params: { ...s.params, [name]: value } })),
+  reset: () => set({ ...initialState, params: { ...defaultParams } }),
 }));
