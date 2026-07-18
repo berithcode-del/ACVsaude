@@ -45,20 +45,6 @@ export function SessionManager({ serverUrl, onSessionSelect, onSessionCreated }:
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
 
-  const createSession = useCallback(async () => {
-    setError('');
-    try {
-      const res = await fetch(`${apiBase}/session`, { method: 'POST' });
-      if (!res.ok) throw new Error('Falha ao criar sessão');
-      const data = await res.json();
-      loadSessions();
-      onSessionCreated(data.sessionId);
-      return data.sessionId;
-    } catch (err: any) {
-      setError(err.message);
-    }
-  }, [apiBase, loadSessions, onSessionCreated]);
-
   const loadSessions = useCallback(async () => {
     setLoading(true);
     try {
@@ -72,6 +58,20 @@ export function SessionManager({ serverUrl, onSessionSelect, onSessionCreated }:
       setLoading(false);
     }
   }, [apiBase]);
+
+  const createSession = useCallback(async () => {
+    setError('');
+    try {
+      const res = await fetch(`${apiBase}/session`, { method: 'POST' });
+      if (!res.ok) throw new Error('Falha ao criar sessão');
+      const data = await res.json();
+      loadSessions();
+      onSessionCreated(data.sessionId);
+      return data.sessionId;
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }, [apiBase, loadSessions, onSessionCreated]);
 
   useEffect(() => { loadSessions(); }, [loadSessions]);
 
